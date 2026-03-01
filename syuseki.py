@@ -7,11 +7,14 @@ st.set_page_config(page_title="シフト管理システム", layout="wide")
 
 # --- 1. データベース（Googleスプレッドシート）への接続設定 ---
 # セキュリティ設定(Secrets)を参照して接続します
+target_url = "https://docs.google.com/spreadsheets/d/1abc123...xyz/edit"
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # データを読み込む関数
 def get_data():
-    return conn.read(ttl="10s") # 10秒キャッシュ（常に最新に近い状態にする）
+    # .strip() をつけることで、前後の余計な空白を自動で消去します
+    clean_url = target_url.strip()
+    return conn.read(spreadsheet=clean_url, ttl="5s")
 
 # --- 2. サイドバーでの画面切り替え ---
 st.sidebar.title("📱 シフト管理システム")
@@ -72,5 +75,6 @@ else:
                 st.dataframe(matrix, use_container_width=True)
     else:
         st.warning("パスワードを入力してください。")
+
 
 
