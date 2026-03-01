@@ -1,99 +1,76 @@
 import streamlit as st
 import pandas as pd
 import datetime
-# 💡 追加：書き込みに必要な部品
 from streamlit_gsheets import GSheetsConnection
-
-# ==========================================
-# 1. 設定（スプレッドシートのURLを貼る）
-# ==========================================
-SHEET_URL = "ここにコピーしたスプレッドシートのURLを貼ってください"
-CSV_URL = SHEET_URL.split("/edit")[0] + "/export?format=csv"
-ADMIN_PASSWORD = "staff123" 
-
-# データの読み込み
-def load_data():
-    try:
-        df = pd.read_csv(CSV_URL)
-        df['日付'] = df['日付'].astype(str)
-        return df
-    except:
-        return pd.DataFrame(columns=["名前", "日付"])
 
 st.set_page_config(page_title="シフト管理システム", layout="wide")
 
-if 'submit_count' not in st.session_state:
-    st.session_state.submit_count = 0
+# --- 1. データベース（Googleスプレッドシート）への接続設定 ---
+# セキュリティ設定(Secrets)を参照して接続します
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-# サイドバー
-with st.sidebar:
-    st.title("📱 メニュー")
-    mode = st.radio("役割を選択してください", ["【バイト】希望入力", "【職員】シフト管理"])
+# データを読み込む関数
+def get_data():
+    return conn.read(ttl="10s") # 10秒キャッシュ（常に最新に近い状態にする）
 
-df = load_data()
+# --- 2. サイドバーでの画面切り替え ---
+st.sidebar.title("📱 シフト管理システム")
+mode = st.sidebar.radio("役割を選択してください", ["【バイト】希望入力", "【職員】シフト管理"])
 
-# ==========================================
-# A. バイト用（希望入力）
-# ==========================================
+# --- A. バイト用画面 ---
 if mode == "【バイト】希望入力":
-    st.title("📝 シフト希望 入力画面")
+    st.title("📝 シフト希望 入力")
+    st.write("名前を入力し、希望日を選択して送信してください。")
     
-    input_name = st.text_input("名前（フルネーム）", key=f"n_{st.session_state.submit_count}")
+    name = st.text_input("フルネーム")
     
+    # 向こう60日の日付を選択肢にする
     today = datetime.date.today()
     date_options = [(today + datetime.timedelta(days=i)).strftime("%Y-%m-%d") for i in range(60)]
-    input_dates = st.multiselect("入れる日を選択", options=date_options, key=f"d_{st.session_state.submit_count}")
+    selected_dates = st.multiselect("入れる日を選択（複数可）", date_options)
     
     if st.button("希望を送信する"):
-        if input_name and input_dates:
-            # --- ここから書き換え ---
-            try:
-                # スプレッドシートへの接続を確立
-                conn = st.connection("gsheets", type=GSheetsConnection)
-                
-                # 新しいデータを作成
-                new_data = pd.DataFrame([[input_name, d] for d in input_dates], columns=["名前", "日付"])
-                
-                # 既存のデータ（df）と新しいデータを合体させて保存
-                updated_df = pd.concat([df, new_data], ignore_index=True).drop_duplicates()
-                
-                # スプレッドシートを更新
-                conn.update(spreadsheet=SHEET_URL, data=updated_df)
-                
-                st.success(f"{input_name}さんの希望をスプレッドシートに保存しました！")
-                st.session_state.submit_count += 1
-                st.rerun()
-            except Exception as e:
-                st.error(f"保存に失敗しました。Secretsの設定を確認してください。エラー内容: {e}")
-            # --- ここまで書き換え ---
+        if name and selected_dates:
+            # 既存のデータを取得
+            existing_data = get_data()
+            
+            # 新しいデータを準備
+            new_entries = pd.DataFrame([{"名前": name, "日付": d} for d in selected_dates])
+            
+            # データを合体させて保存
+            updated_data = pd.concat([existing_data, new_entries], ignore_index=True).drop_duplicates()
+            conn.update(data=updated_data)
+            
+            st.success(f"{name}さんの希望を保存しました！")
+            st.balloons()
         else:
-            st.error("名前と日付を入力してください。")
+            st.error("名前と日付を正しく入力してください。")
 
-# ==========================================
-# B. 職員用（シフト管理）
-# ==========================================
+# --- B. 職員用画面 ---
 else:
-    st.title("🔑 職員専用 管理画面")
-    if 'logged_in' not in st.session_state:
-        st.session_state.logged_in = False
+    st.title("🔑 職員用 管理画面")
     
-    if not st.session_state.logged_in:
-        pw = st.text_input("パスワード", type="password")
-        if st.button("ログイン"):
-            if pw == ADMIN_PASSWORD:
-                st.session_state.logged_in = True
-                st.rerun()
-    else:
-        if st.button("🔒 ログアウト"):
-            st.session_state.logged_in = False
-            st.rerun()
-
-        st.markdown("---")
-        tab1, tab2 = st.tabs(["📊 現在のデータ", "📅 シフト表"])
+    password = st.sidebar.text_input("管理者パスワード", type="password")
+    if password == "staff123": # パスワードは自由に変えてください
+        st.success("ログイン成功")
+        
+        df = get_data()
+        
+        tab1, tab2 = st.tabs(["📊 リスト表示", "📅 シフト表（Excel風）"])
+        
         with tab1:
+            st.subheader("登録データ一覧")
             st.dataframe(df, use_container_width=True)
+            
+            # 特定の行を削除するなどの機能もここに追加可能です
+            
         with tab2:
+            st.subheader("全体シフト確認表")
             if not df.empty:
-                matrix = pd.crosstab(df['名前'], df['日付']).replace(1, "◯").replace(0, "×")
-                st.dataframe(matrix)
+                # 名前を縦軸、日付を横軸にして「◯」を入れる表を作る
+                matrix = pd.crosstab(df['名前'], df['日付']).replace(1, "◯").replace(0, "")
+                st.dataframe(matrix, use_container_width=True)
+    else:
+        st.warning("パスワードを入力してください。")
+
 
