@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import datetime
+# 💡 追加：書き込みに必要な部品
+from streamlit_gsheets import GSheetsConnection
 
 # ==========================================
 # 1. 設定（スプレッドシートのURLを貼る）
@@ -44,11 +46,26 @@ if mode == "【バイト】希望入力":
     
     if st.button("希望を送信する"):
         if input_name and input_dates:
-            # 💡 ここが重要：ネット公開時はスプレッドシートへ送る必要があります
-            # 一旦、エラーを防ぐために表示だけにしています
-            st.success(f"{input_name}さんの希望を受け付けました（スプレッドシート接続準備中）")
-            st.session_state.submit_count += 1
-            st.rerun()
+            # --- ここから書き換え ---
+            try:
+                # スプレッドシートへの接続を確立
+                conn = st.connection("gsheets", type=GSheetsConnection)
+                
+                # 新しいデータを作成
+                new_data = pd.DataFrame([[input_name, d] for d in input_dates], columns=["名前", "日付"])
+                
+                # 既存のデータ（df）と新しいデータを合体させて保存
+                updated_df = pd.concat([df, new_data], ignore_index=True).drop_duplicates()
+                
+                # スプレッドシートを更新
+                conn.update(spreadsheet=SHEET_URL, data=updated_df)
+                
+                st.success(f"{input_name}さんの希望をスプレッドシートに保存しました！")
+                st.session_state.submit_count += 1
+                st.rerun()
+            except Exception as e:
+                st.error(f"保存に失敗しました。Secretsの設定を確認してください。エラー内容: {e}")
+            # --- ここまで書き換え ---
         else:
             st.error("名前と日付を入力してください。")
 
@@ -79,3 +96,4 @@ else:
             if not df.empty:
                 matrix = pd.crosstab(df['名前'], df['日付']).replace(1, "◯").replace(0, "×")
                 st.dataframe(matrix)
+
