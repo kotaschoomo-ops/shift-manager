@@ -9,11 +9,9 @@ st.set_page_config(page_title="シフト管理システム", layout="wide")
 # セキュリティ設定(Secrets)を参照して接続します
 target_url = "https://docs.google.com/spreadsheets/d/1DG1aCJxiw6AEW7O383KKntimnxg_oV4uyecwPtGvx5E/edit?usp=sharing"
 conn = st.connection("gsheets", type=GSheetsConnection)
-
+clean_url = target_url.strip()# .strip() をつけることで、前後の余計な空白を自動で消去します
 # データを読み込む関数
 def get_data():
-    # .strip() をつけることで、前後の余計な空白を自動で消去します
-    clean_url = target_url.strip()
     return conn.read(spreadsheet=clean_url, ttl="5s")
 
 # --- 2. サイドバーでの画面切り替え ---
@@ -75,6 +73,7 @@ else:
                 st.dataframe(matrix, use_container_width=True)
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
