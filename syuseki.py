@@ -42,7 +42,7 @@ if mode == "【バイト】希望入力":
             
             # データを合体させて保存
             updated_data = pd.concat([existing_data, new_entries], ignore_index=True).drop_duplicates()
-            #conn.update(data=updated_data)
+            conn.update(data=updated_data)
             
             st.success(f"{name}さんの希望を保存しました！")
             st.balloons()
@@ -75,6 +75,7 @@ else:
                 st.dataframe(matrix, use_container_width=True)
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
