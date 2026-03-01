@@ -7,7 +7,7 @@ st.set_page_config(page_title="シフト管理システム", layout="wide")
 
 # --- 1. データベース（Googleスプレッドシート）への接続設定 ---
 # セキュリティ設定(Secrets)を参照して接続します
-target_url = "https://docs.google.com/spreadsheets/d/1abc123...xyz/edit"
+target_url = "https://docs.google.com/spreadsheets/d/1DG1aCJxiw6AEW7O383KKntimnxg_oV4uyecwPtGvx5E/edit?usp=sharing"
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 # データを読み込む関数
@@ -75,6 +75,7 @@ else:
                 st.dataframe(matrix, use_container_width=True)
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
