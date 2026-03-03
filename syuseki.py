@@ -56,11 +56,11 @@ if mode == "【バイト】希望入力":
             existing_data = get_data()
 
         # 【追加】今入力された「名前」と一致する行を、既存データから除外する
-        existing_data = existing_data[existing_data["名前"] != name]
+            existing_data = existing_data[existing_data["名前"] != name]
 
-        new_entries = pd.DataFrame(
-            [{"名前": name, "日付": d} for d in selected_dates]
-        )
+            new_entries = pd.DataFrame(
+                [{"名前": name, "日付": d} for d in selected_dates]
+            )
 
             updated_data = pd.concat(
                 [existing_data, new_entries],
@@ -101,6 +101,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
