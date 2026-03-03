@@ -92,7 +92,37 @@ else:
         tab1, tab2 = st.tabs(["📊 リスト表示", "📅 シフト表（Excel風）"])
 
         with tab1:
-            st.dataframe(df, use_container_width=True)
+            if not df.empty:
+                # 1. 削除用のチェックボックス列を追加
+                df.insert(0, "選択", False)
+                
+                # 2. 編集可能なテーブル（Data Editor）を表示
+                # ※ 元の st.dataframe ではなく st.data_editor を使います
+                edited_df = st.data_editor(
+                    df,
+                    column_config={"選択": st.column_config.CheckboxColumn(required=True)},
+                    disabled=["名前", "日付"], # 名前と日付は直接編集できないようにガード
+                    hide_index=True,
+                    use_container_width=True
+                )
+
+                # 3. 「選択」にチェックが入った行だけを抽出
+                rows_to_delete = edited_df[edited_df["選択"] == True]
+
+                if not rows_to_delete.empty:
+                    if st.button("🔴 選択した行を削除する"):
+                        # チェックがついていない行（＝残したいデータ）だけを抽出して保存
+                        remaining_df = edited_df[edited_df["選択"] == False].drop(columns=["選択"])
+                        
+                        sheet.clear()
+                        sheet.append_row(["名前", "日付"])
+                        if not remaining_df.empty:
+                            sheet.append_rows(remaining_df.values.tolist())
+                        
+                        st.success("選択したデータを削除しました！")
+                        st.rerun() # 画面を更新して削除を反映
+            else:
+                st.info("現在、登録されているデータはありません。")
 
         with tab2:
             if not df.empty:
@@ -101,6 +131,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
