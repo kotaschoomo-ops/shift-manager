@@ -50,14 +50,17 @@ if mode == "【バイト】希望入力":
 
     selected_dates = st.multiselect("入れる日を選択（複数可）", date_options)
 
+    # 送信ボタンの中の処理
     if st.button("希望を送信する"):
         if name and selected_dates:
-
             existing_data = get_data()
 
-            new_entries = pd.DataFrame(
-                [{"名前": name, "日付": d} for d in selected_dates]
-            )
+        # 【追加】今入力された「名前」と一致する行を、既存データから除外する
+        existing_data = existing_data[existing_data["名前"] != name]
+
+        new_entries = pd.DataFrame(
+            [{"名前": name, "日付": d} for d in selected_dates]
+        )
 
             updated_data = pd.concat(
                 [existing_data, new_entries],
@@ -98,6 +101,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
