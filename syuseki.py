@@ -27,8 +27,16 @@ sheet = spreadsheet.sheet1
 
 # ===== データ取得 =====
 def get_data():
-    data = sheet.get_all_records()
-    return pd.DataFrame(data)
+    # 1. 全データを取得
+    all_values = sheet.get_all_values()
+    
+    # 2. データが全くない、またはヘッダーしかない場合の処理
+    if len(all_values) <= 1:
+        # データが空でも「名前」と「日付」という列だけ持った空の表を作る
+        return pd.DataFrame(columns=["名前", "日付"])
+    
+    # 3. データがある場合は、1行目をヘッダーとして読み込む
+    return pd.DataFrame(all_values[1:], columns=all_values[0])
 
 
 # ===== サイドバー =====
@@ -131,6 +139,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
