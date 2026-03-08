@@ -18,6 +18,11 @@ creds = Credentials.from_service_account_info(
 
 client = gspread.authorize(creds)
 
+# 🔽 スプレッドシートを開く処理を「キャッシュ」する
+@st.cache_resource
+def get_spreadsheet(url):
+    return client.open_by_url(url)
+
 # 🔽 あなたのスプレッドシートURL
 target_url = "https://docs.google.com/spreadsheets/d/1DG1aCJxiw6AEW7O383KKntimnxg_oV4uyecwPtGvx5E/edit?usp=sharing"
 
@@ -139,6 +144,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
