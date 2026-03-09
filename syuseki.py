@@ -84,11 +84,12 @@ if mode == "【バイト】希望入力":
         if name and selected_dates:
             existing_data = get_data()
 
-        # 【追加】今入力された「名前」と一致する行を、既存データから除外する
+       # 既存データから、今回入力した人のデータを一旦除外
+         if not existing_data.empty:
             existing_data = existing_data[existing_data["名前"] != name]
 
-            new_entries = pd.DataFrame(
-                [{"名前": name, "日付": d} for d in selected_dates]
+        new_entries = pd.DataFrame(
+             [{"名前": name, "日付": d} for d in selected_dates]
             )
 
             updated_data = pd.concat(
@@ -101,8 +102,13 @@ if mode == "【バイト】希望入力":
             sheet.append_row(["名前", "日付"])  # ヘッダー
             sheet.append_rows(updated_data.values.tolist())
 
+            # ★【重要】ここを追加！ 古いキャッシュを消して、職員画面を強制更新します
+            st.cache_data.clear()
+
             st.success(f"{name}さんの希望を保存しました！")
             st.balloons()
+            # ★【重要】保存後に画面を自動で再読み込みさせるとより確実です
+            st.rerun()
         else:
             st.error("名前と日付を入力してください。")
 
@@ -160,6 +166,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
