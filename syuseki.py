@@ -82,32 +82,37 @@ if mode == "【バイト】希望入力":
     # 送信ボタンの中の処理
     if st.button("希望を送信する"):
         if name and selected_dates:
+            # 1. 既存データを取得
             existing_data = get_data()
 
-       # 既存データから、今回入力した人のデータを一旦除外
-         if not existing_data.empty:
-            existing_data = existing_data[existing_data["名前"] != name]
+            # 2. 既存データから、今回入力した人のデータを一旦除外
+            if not existing_data.empty:
+                existing_data = existing_data[existing_data["名前"] != name]
 
-        new_entries = pd.DataFrame(
-             [{"名前": name, "日付": d} for d in selected_dates]
+            # 3. 今回選んだ日付をデータフレームに変換
+            new_entries = pd.DataFrame(
+                [{"名前": name, "日付": d} for d in selected_dates]
             )
 
+            # 4. データを合体させて重複を削除
             updated_data = pd.concat(
                 [existing_data, new_entries],
                 ignore_index=True
             ).drop_duplicates()
 
-            # シートに保存
+            # 5. スプレッドシートを更新
             sheet.clear()
             sheet.append_row(["名前", "日付"])  # ヘッダー
-            sheet.append_rows(updated_data.values.tolist())
+            if not updated_data.empty:
+                sheet.append_rows(updated_data.values.tolist())
 
-            # ★【重要】ここを追加！ 古いキャッシュを消して、職員画面を強制更新します
+            # 6. キャッシュをクリアして即座に反映させる
             st.cache_data.clear()
 
             st.success(f"{name}さんの希望を保存しました！")
             st.balloons()
-            # ★【重要】保存後に画面を自動で再読み込みさせるとより確実です
+            
+            # 7. 画面をリロードして入力をリセット
             st.rerun()
         else:
             st.error("名前と日付を入力してください。")
@@ -166,6 +171,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
