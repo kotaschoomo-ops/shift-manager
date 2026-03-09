@@ -57,63 +57,54 @@ if mode == "【バイト】希望入力":
 
     name = st.text_input("フルネーム")
 
-    # --- ここからカレンダー修正 ---
+    # --- ここからカレンダー修正（記憶保持モード） ---
     st.write("カレンダーをタップして、**「入れる日」**をすべて選択してください。")
 
-    today = datetime.date.today()
+# 1. 記憶（セッション状態）の初期化
+    if "selected_dates_list" not in st.session_state:
+        st.session_state.selected_dates_list = []
 
-    # カレンダーを表示し、クリックした日をリストに格納する（複数選択モード）
-    selected_date_objects = st.date_input(
-        "希望日を選択（複数選択可）",
-        value=[], # 空のリストを渡すのが「複数選択」のスイッチです
+# 2. カレンダーを表示
+    today = datetime.date.today()
+    picked_date = st.date_input(
+        "日付を1つずつ選んで追加してください",
+        value=None,  # 常に空で表示させる
         min_value=today,
         max_value=today + datetime.timedelta(days=60),
         label_visibility="collapsed"
     )
 
-    # 選択された日付（オブジェクト）を、保存用の文字列 ("2026-03-09") に変換
-    selected_dates = [d.strftime("%Y-%m-%d") for d in selected_date_objects]
+# 3. 日付がクリックされたら、リストに追加（既にあるなら削除）
+    if picked_date:
+        date_str = picked_date.strftime("%Y-%m-%d")
+    if date_str not in st.session_state.selected_dates_list:
+        st.session_state.selected_dates_list.append(date_str)
+    else:
+        st.session_state.selected_dates_list.remove(date_str)
+    
+    # 選択後にカレンダーをリセットするために一度再実行
+    st.rerun()
 
-    # 確認用：選んだ日数を表示
-    if selected_dates:
-        st.info(f"現在 {len(selected_dates)} 日間を選択中です。")
-    # --- ここまでカレンダー修正 ---
+# 4. 現在選ばれている日を表示
+    if st.session_state.selected_dates_list:
+        selected_dates = sorted(st.session_state.selected_dates_list) # 保存用変数
+        st.info(f"✅ 選択中: {len(selected_dates)}日間")
+    
+    # 選んだ日をタグのように表示し、間違えたら消せるようにする
+        cols = st.columns(3)
+        for i, d in enumerate(selected_dates):
+            if cols[i % 3].button(f"🗑️ {d}", key=f"del_{d}"):
+                st.session_state.selected_dates_list.remove(d)
+                st.rerun()
+    else:
+        selected_dates = []
+        st.warning("まだ日付が選択されていません。")
 
-    # 送信ボタンの中の処理
-    if st.button("希望を送信する"):
-        if name and selected_dates:
-            # 1. 既存データを取得
-            existing_data = get_data()
-
-            # 2. 既存データから、今回入力した人のデータを一旦除外
-            if not existing_data.empty:
-                existing_data = existing_data[existing_data["名前"] != name]
-
-            # 3. 今回選んだ日付をデータフレームに変換
-            new_entries = pd.DataFrame(
-                [{"名前": name, "日付": d} for d in selected_dates]
-            )
-
-            # 4. データを合体させて重複を削除
-            updated_data = pd.concat(
-                [existing_data, new_entries],
-                ignore_index=True
-            ).drop_duplicates()
-
-            # 5. スプレッドシートを更新
-            sheet.clear()
-            sheet.append_row(["名前", "日付"])  # ヘッダー
-            if not updated_data.empty:
-                sheet.append_rows(updated_data.values.tolist())
-
-            # 6. キャッシュをクリアして即座に反映させる
-            st.cache_data.clear()
-
-            st.success(f"{name}さんの希望を保存しました！")
-            st.balloons()
-            
-            # 7. 画面をリロードして入力をリセット
-            st.rerun()
+# 5. 全リセットボタン
+    if st.button("選択をすべてクリア"):
+        st.session_state.selected_dates_list = []
+        st.rerun()
+# --- ここまで ---
         else:
             st.error("名前と日付を入力してください。")
 
@@ -171,6 +162,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
