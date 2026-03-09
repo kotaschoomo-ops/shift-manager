@@ -31,13 +31,14 @@ sheet = spreadsheet.sheet1
 
 
 # ===== データ取得 =====
+# @st.cache_data を追加して、10秒間はGoogleに聞かずに手元のデータを使うようにします
+@st.cache_data(ttl=10) 
 def get_data():
     # 1. 全データを取得
     all_values = sheet.get_all_values()
     
     # 2. データが全くない、またはヘッダーしかない場合の処理
     if len(all_values) <= 1:
-        # データが空でも「名前」と「日付」という列だけ持った空の表を作る
         return pd.DataFrame(columns=["名前", "日付"])
     
     # 3. データがある場合は、1行目をヘッダーとして読み込む
