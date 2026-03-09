@@ -60,37 +60,36 @@ if mode == "【バイト】希望入力":
     # --- ここからカレンダー修正（記憶保持モード） ---
     st.write("カレンダーをタップして、**「入れる日」**をすべて選択してください。")
 
-# 1. 記憶（セッション状態）の初期化
+    # 1. 記憶（セッション状態）の初期化
     if "selected_dates_list" not in st.session_state:
         st.session_state.selected_dates_list = []
 
-# 2. カレンダーを表示
+    # 2. カレンダーを表示
     today = datetime.date.today()
     picked_date = st.date_input(
         "日付を1つずつ選んで追加してください",
-        value=None,  # 常に空で表示させる
+        value=None,
         min_value=today,
         max_value=today + datetime.timedelta(days=60),
         label_visibility="collapsed"
     )
 
-# 3. 日付がクリックされたら、リストに追加（既にあるなら削除）
+    # 3. 日付がクリックされたら、リストに追加（既にあるなら削除）
     if picked_date:
         date_str = picked_date.strftime("%Y-%m-%d")
-    if date_str not in st.session_state.selected_dates_list:
-        st.session_state.selected_dates_list.append(date_str)
-    else:
-        st.session_state.selected_dates_list.remove(date_str)
-    
-    # 選択後にカレンダーをリセットするために一度再実行
-    st.rerun()
+        if date_str not in st.session_state.selected_dates_list:
+            st.session_state.selected_dates_list.append(date_str)
+        else:
+            st.session_state.selected_dates_list.remove(date_str)
+        # 選択後にカレンダーの選択状態をリセットするために再実行
+        st.rerun()
 
-# 4. 現在選ばれている日を表示
+    # 4. 現在選ばれている日を表示
     if st.session_state.selected_dates_list:
-        selected_dates = sorted(st.session_state.selected_dates_list) # 保存用変数
+        selected_dates = sorted(st.session_state.selected_dates_list)
         st.info(f"✅ 選択中: {len(selected_dates)}日間")
-    
-    # 選んだ日をタグのように表示し、間違えたら消せるようにする
+        
+        # 選んだ日をボタンとして表示し、個別に消せるようにする
         cols = st.columns(3)
         for i, d in enumerate(selected_dates):
             if cols[i % 3].button(f"🗑️ {d}", key=f"del_{d}"):
@@ -100,13 +99,42 @@ if mode == "【バイト】希望入力":
         selected_dates = []
         st.warning("まだ日付が選択されていません。")
 
-# 5. 全リセットボタン
+    # 5. 全リセットボタン
     if st.button("選択をすべてクリア"):
         st.session_state.selected_dates_list = []
         st.rerun()
-# --- ここまで ---
+
+    # --- 6. 送信ボタンの処理 ---
+    if st.button("希望を送信する"):
+        # 名前と日付の両方があるかチェック
+        if name and selected_dates:
+            existing_data = get_data()
+
+            # 既存データから自分の名前のデータを一旦消す
+            if not existing_data.empty:
+                existing_data = existing_data[existing_data["名前"] != name]
+
+            # 新しいデータを作成
+            new_entries = pd.DataFrame(
+                [{"名前": name, "日付": d} for d in selected_dates]
+            )
+
+            # 合体
+            updated_data = pd.concat([existing_data, new_entries], ignore_index=True).drop_duplicates()
+
+            # 保存
+            sheet.clear()
+            sheet.append_row(["名前", "日付"])
+            sheet.append_rows(updated_data.values.tolist())
+
+            # 反映
+            st.cache_data.clear()
+            st.session_state.selected_dates_list = [] # 送信後はリストを空にする
+            st.success(f"{name}さんの希望を保存しました！")
+            st.balloons()
+            st.rerun()
         else:
-            st.error("名前と日付を入力してください。")
+            st.error("名前を入力し、カレンダーで日付を1日以上選択してください。")
 
 
 # ===== 職員画面 =====
@@ -162,6 +190,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
