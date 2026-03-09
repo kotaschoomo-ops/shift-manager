@@ -56,13 +56,28 @@ if mode == "【バイト】希望入力":
 
     name = st.text_input("フルネーム")
 
+    # --- ここからカレンダー修正 ---
+    st.write("希望する期間の「開始日」と「終了日」を選択してください")
     today = datetime.date.today()
-    date_options = [
-        (today + datetime.timedelta(days=i)).strftime("%Y-%m-%d")
-        for i in range(60)
-    ]
+    
+    # カレンダーを表示して範囲を選択させる
+    selected_range = st.date_input(
+        "期間を選択",
+        value=(today, today + datetime.timedelta(days=7)), # 初期値は今日から1週間
+        min_value=today,
+        max_value=today + datetime.timedelta(days=60),
+        label_visibility="collapsed"
+    )
 
-    selected_dates = st.multiselect("入れる日を選択（複数可）", date_options)
+    # 選択された範囲から、日付のリストを自動生成する
+    selected_dates = []
+    if isinstance(selected_range, tuple) and len(selected_range) == 2:
+        start_date, end_date = selected_range
+        current_date = start_date
+        while current_date <= end_date:
+            selected_dates.append(current_date.strftime("%Y-%m-%d"))
+            current_date += datetime.timedelta(days=1)
+    # --- ここまでカレンダー修正 ---
 
     # 送信ボタンの中の処理
     if st.button("希望を送信する"):
@@ -145,6 +160,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
