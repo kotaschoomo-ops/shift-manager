@@ -61,17 +61,13 @@ if mode == "【バイト】希望入力":
 
     today = datetime.date.today()
     
-    # ★ここが重要：辞書設定は使わず、直接引数で指定します
-    selected_date_objects = st.date_input(
-        "希望日を選択（複数選択可）",
-        value=[], # ← ここを空リストにするだけで「1日ずつ複数選択」になります
-        min_value=today,
-        max_value=today + datetime.timedelta(days=60),
-        label_visibility="collapsed"
-    )
+    selected_dates = []
 
-    # 選択された日付を保存用の文字に変換
-    selected_dates = [d.strftime("%Y-%m-%d") for d in selected_date_objects]
+    for i in range(60):
+        d = today + datetime.timedelta(days=i)
+    
+    if st.checkbox(d.strftime("%Y-%m-%d")):
+        selected_dates.append(d.strftime("%Y-%m-%d"))
 
     # 送信ボタンの中の処理
     if st.button("希望を送信する"):
@@ -154,6 +150,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
