@@ -1,1 +1,5 @@
-st-gsheets-connection
+streamlit
+pandas
+gspread
+google-auth
+streamlit-calendar
