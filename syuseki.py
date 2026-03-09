@@ -57,27 +57,27 @@ if mode == "【バイト】希望入力":
 
     name = st.text_input("フルネーム")
 
-# --- ここからカレンダー修正 ---
-st.write("カレンダーをタップして、**「入れる日」**をすべて選択してください。")
+    # --- ここからカレンダー修正 ---
+    st.write("カレンダーをタップして、**「入れる日」**をすべて選択してください。")
 
-today = datetime.date.today()
+    today = datetime.date.today()
 
-# カレンダーを表示し、クリックした日をリストに格納する（複数選択モード）
-selected_date_objects = st.date_input(
-    "希望日を選択（複数選択可）",
-    value=[], # 空のリストを渡すのが「複数選択」のスイッチです
-    min_value=today,
-    max_value=today + datetime.timedelta(days=60),
-    label_visibility="collapsed"
-)
+    # カレンダーを表示し、クリックした日をリストに格納する（複数選択モード）
+    selected_date_objects = st.date_input(
+        "希望日を選択（複数選択可）",
+        value=[], # 空のリストを渡すのが「複数選択」のスイッチです
+        min_value=today,
+        max_value=today + datetime.timedelta(days=60),
+        label_visibility="collapsed"
+    )
 
-# 選択された日付（オブジェクト）を、保存用の文字列 ("2026-03-09") に変換
-selected_dates = [d.strftime("%Y-%m-%d") for d in selected_date_objects]
+    # 選択された日付（オブジェクト）を、保存用の文字列 ("2026-03-09") に変換
+    selected_dates = [d.strftime("%Y-%m-%d") for d in selected_date_objects]
 
-# 確認用：選んだ日数を表示
-if selected_dates:
-    st.info(f"現在 {len(selected_dates)} 日間を選択中です。")
-# --- ここまでカレンダー修正 ---
+    # 確認用：選んだ日数を表示
+    if selected_dates:
+        st.info(f"現在 {len(selected_dates)} 日間を選択中です。")
+    # --- ここまでカレンダー修正 ---
 
     # 送信ボタンの中の処理
     if st.button("希望を送信する"):
@@ -160,6 +160,7 @@ else:
 
     else:
         st.warning("パスワードを入力してください。")
+
 
 
 
